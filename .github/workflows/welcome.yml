@@ -1,15 +1,31 @@
-name: Post welcome comment
+name: Modified Workflow
 on:
   pull_request:
     types: [opened]
+  push:
 permissions:
   pull-requests: write
 jobs:
   welcome:
-    name: Post welcome comment
-    runs-on: ubuntu-latest
+    name: Modified
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        node-version: [18, 20]
     steps:
-      - run: gh pr comment "$PR_URL" --body "Welcome to the repository!"
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Run on PR
+        if: github.event_name == 'pull_request'
+        run: gh pr comment "$PR_URL" --body "Welcome to the repository! Running on ${{ matrix.os }} with Node.js ${{ matrix.node-version }}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_URL: ${{ github.event.pull_request.html_url }}
+      - name: Run on push
+        if: github.event_name == 'push'
+        run: echo "Workflow triggered by push to ${{ github.ref }} on ${{ matrix.os }} with Node.js ${{ matrix.node-version }}"
